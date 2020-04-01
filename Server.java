@@ -7,9 +7,9 @@ import java.rmi.server.UnicastRemoteObject;
 
 
 // Servidor
-public class ChatRMIServer extends ChatRMIServant
+public class Server extends Servant
 {
-	public ChatRMIServer() throws RemoteException {};
+	public Server() throws RemoteException {};
 	public static void main(String args[])
 	{
 		System.out.println("Cargando Servicio RMI");
@@ -17,9 +17,9 @@ public class ChatRMIServer extends ChatRMIServant
 		try
 		{
 				// Cargar el servicio.
-				ChatRMIServant servicioChat = new ChatRMIServant();
+				Servant servicioChat = new Servant();
 
-				ChatRMI Chat = (ChatRMI) UnicastRemoteObject.exportObject(servicioChat, 0);
+				ServerRMI Chat = (ServerRMI) UnicastRemoteObject.exportObject(servicioChat, 0);
 				// Imprimir la ubicacion del servicio.
 				/*RemoteRef location = servicioChat.getRef();
 				System.out.println(location.remoteToString());*/

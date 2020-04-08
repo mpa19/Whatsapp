@@ -29,34 +29,43 @@ public class Servant implements ServerRMI {
         if(u != null) {
             if(u.getContraseña().equals(contra)) {
                 if(!loggeados.containsKey(u) && !loggeados.containsValue(listener)){
-                  notificarListenersLogin(user);
                   loggeados.put(u,listener);
+                  notificarListenersLogin(user);
                 }
             }
         }
     }
 
-    public void newUser (String user, String password, String groupString) throws RemoteException {
+    public void newUser (String user, String password, String groupString, ClientRMI listener) throws RemoteException {
         Usuario u = getUsuario(user);
         if (u == null) {
             this.usuarios.add(new Usuario(user, password));
+            if(groups.containsKey(groupString)) {
+              joinGroup(groupString, listener);
+            }
         }
     }
 
     public void newGroup(String name) throws RemoteException{
-        this.groups.put(name, new Vector<>());
-        notificarListenerGroup(name);
+        Vector<ClientRMI> cL = getListersGroup(name);
+        if(cL == null){
+          this.groups.put(name, new Vector<>());
+          notificarListenerGroup(name);
+        }
     }
 
     public void joinGroup(String name, ClientRMI listener) throws RemoteException{
-        for(Entry<String, Vector<ClientRMI>> log: groups.entrySet()){
-            String a = log.getKey();
-            if(a.equals(name)) log.getValue().add(listener);
+        Vector<ClientRMI> cL = getListersGroup(name);
+        //Mirar si existe el grupo
+        if (cL != null) {
+          //Mirar si ya esta en el grupo
+          if(!cL.contains(listener)){
+            cL.add(listener);
+          }
         }
     }
 
     public void logout(ClientRMI listener) throws RemoteException {
-        //listaListeners.remove(listener);
         Entry<Usuario, ClientRMI> e = contener(listener);
         if(e != null) loggeados.remove(e.getKey());
     }
@@ -74,9 +83,11 @@ public class Servant implements ServerRMI {
       Usuario uSrc = getUsuario(userSrc);
       //Mirar si el que envia el mensaje esta logueado/existe
       if(loggeados.containsKey(uSrc)){
+
         //Mirar si el usuario al cual va el mensaje esta logueado/existe
         Usuario uDst = getUsuario(userDst);
         if(loggeados.containsKey(uDst)){
+
           ClientRMI c = loggeados.get(uDst);
           ClientRMI c1 = loggeados.get(uSrc);
           //Mirar si el usuario al que le envias el mensaje eres tu mismo
@@ -97,15 +108,14 @@ public class Servant implements ServerRMI {
         for(Entry<Usuario, ClientRMI> log: loggeados.entrySet()){
           Usuario u = log.getKey();
 
-          if(!u.getNombre().equals(user)){
-            try {
-                log.getValue().notifyNewUser(user);
-            }
-            catch (RemoteException re) {
-                System.out.println (" Listener not accessible, removing listener -" + log.getValue());
-                loggeados.remove(u);
-            }
+          try {
+              log.getValue().notifyNewUser(user);
           }
+          catch (RemoteException re) {
+              System.out.println (" Listener not accessible, removing listener -" + log.getValue());
+              loggeados.remove(u);
+          }
+
         }
     }
 
@@ -122,9 +132,12 @@ public class Servant implements ServerRMI {
 
     public void sendMsgGroup(String userSrc, String group, String message, String date) {
         Vector<ClientRMI> cL = getListersGroup(group);
+
         if (cL != null) {
+
           ClientRMI uSrc = loggeados.get(getUsuario(userSrc));
           if(cL.contains(uSrc)){
+
             for (Enumeration e = cL.elements(); e.hasMoreElements(); ) {
                 ClientRMI listener1 = (ClientRMI) e.nextElement();
                 try {
@@ -146,7 +159,14 @@ public class Servant implements ServerRMI {
     }
 
 
-    public void leaveGroup(String group, ClientRMI listener) {}
+    public void leaveGroup(String group, ClientRMI listener) {
+      for (Entry<String, Vector<ClientRMI>> log : groups.entrySet()){
+          if(log.getKey().equals(group)) {
+            log.getValue().remove(listener);
+            break;
+          }
+      }
+    }
 
 
 

@@ -4,12 +4,17 @@ import java.rmi.server.*;
 import java.util.Scanner;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.lang.SecurityManager;
+
 
 public class Client extends UnicastRemoteObject implements ClientRMI {
 
     public Client() throws RemoteException {}
 
     public static void main(String[] args)  throws RemoteException {
+      if ( System.getSecurityManager() == null)
+			   System.setSecurityManager(new SecurityManager());
+
       try
   		{
 
@@ -54,12 +59,22 @@ public class Client extends UnicastRemoteObject implements ClientRMI {
               DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
               LocalTime time = LocalTime.now();
               if(line.length > 2) {
-                String msg = "";
-                for(int i = 2; i<line.length; i++){
-                  msg += line[i];
-                  msg += " ";
+                if(line[1].equals("-g")){
+                  String msg = "";
+                  for(int i = 3; i<line.length; i++){
+                    msg += line[i];
+                    msg += " ";
+                  }
+                  servicioChat.sendMsgGroup(loginName, line[2], msg, time.format(formatter));
+                } else {
+                  String msg = "";
+                  for(int i = 2; i<line.length; i++){
+                    msg += line[i];
+                    msg += " ";
+                  }
+                  servicioChat.sendMsgUser(loginName,line[1],msg, time.format(formatter));
                 }
-                servicioChat.sendMsgUser(loginName,line[1],msg, time.format(formatter));
+
               }
 
           } else if(line[0].equals("JoinGroup")) {
@@ -67,18 +82,6 @@ public class Client extends UnicastRemoteObject implements ClientRMI {
 
           } else if(line[0].equals(("NewGroup"))){
               if(line.length == 2) servicioChat.newGroup(line[1]);
-
-          } else if (line[0].equals(("SendGroup"))){
-              DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-              LocalTime time = LocalTime.now();
-              if(line.length > 2) {
-                String msg = "";
-                for(int i = 2; i<line.length; i++){
-                  msg += line[i];
-                  msg += " ";
-                }
-                servicioChat.sendMsgGroup(loginName, line[1], msg, time.format(formatter));
-              }
 
           } else if (line[0].equals(("LeaveGroup"))){
               if(line.length == 2) servicioChat.leaveGroup(line[1], a);

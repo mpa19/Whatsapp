@@ -141,7 +141,7 @@ public class Servant implements ServerRMI {
             for (Enumeration e = cL.elements(); e.hasMoreElements(); ) {
                 ClientRMI listener1 = (ClientRMI) e.nextElement();
                 try {
-                    listener1.sendMsgGroup(userSrc, group, message, date);
+                    if(loggeados.containsValue(listener1)) listener1.sendMsgGroup(userSrc, group, message, date);
                 } catch (RemoteException re) {
                     System.out.println(" Listener not accessible, removing listener -" + listener1);
                     cL.remove(listener1);

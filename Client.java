@@ -38,8 +38,8 @@ public class Client extends UnicastRemoteObject implements ClientRMI {
         while(true){
           String line[] = s.nextLine().split(" ");
           if(line[0].equals("NewUser")) {
-              if(line.length == 4) servicioChat.newUser(line[1], line[2] , line[3], a);
-              else if(line.length == 3) servicioChat.newUser(line[1], line[2] , "", a);
+              if(line.length == 4) servicioChat.newUser(line[1], line[2] , line[3]);
+              else if(line.length == 3) servicioChat.newUser(line[1], line[2] , "");
 
           } else if(line[0].equals("Login")) {
               if(line.length == 3){
@@ -78,13 +78,13 @@ public class Client extends UnicastRemoteObject implements ClientRMI {
               }
 
           } else if(line[0].equals("JoinGroup")) {
-            if(line.length == 2) servicioChat.joinGroup(line[1], a);
+            if(line.length == 2) servicioChat.joinGroup(line[1], loginName, a);
 
           } else if(line[0].equals(("NewGroup"))){
               if(line.length == 2) servicioChat.newGroup(line[1]);
 
           } else if (line[0].equals(("LeaveGroup"))){
-              if(line.length == 2) servicioChat.leaveGroup(line[1], a);
+              if(line.length == 2) servicioChat.leaveGroup(line[1], loginName, a);
           }
         }
       }

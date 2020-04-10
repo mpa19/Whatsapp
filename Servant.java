@@ -13,7 +13,7 @@ public class Servant implements ServerRMI {
 
     private ArrayList<Usuario> usuarios = new ArrayList<>();
     private Map<Usuario,ClientRMI> loggeados = new HashMap<>();
-    private Map<String,Vector<ClientRMI> > groups = new HashMap<>();
+    private Map<String,Vector<Usuario> > groups = new HashMap<>();
 
     public Servant() throws RemoteException {}
 
@@ -36,31 +36,32 @@ public class Servant implements ServerRMI {
         }
     }
 
-    public void newUser (String user, String password, String groupString, ClientRMI listener) throws RemoteException {
+    public void newUser (String user, String password, String groupString) throws RemoteException {
         Usuario u = getUsuario(user);
         if (u == null) {
             this.usuarios.add(new Usuario(user, password));
             if(groups.containsKey(groupString)) {
-              joinGroup(groupString, listener);
+              joinGroup(groupString, user, null);
             }
         }
     }
 
     public void newGroup(String name) throws RemoteException{
-        Vector<ClientRMI> cL = getListersGroup(name);
+        Vector<Usuario> cL = getUsersGroup(name);
         if(cL == null){
           this.groups.put(name, new Vector<>());
           notificarListenerGroup(name);
         }
     }
 
-    public void joinGroup(String name, ClientRMI listener) throws RemoteException{
-        Vector<ClientRMI> cL = getListersGroup(name);
+    public void joinGroup(String name, String username, ClientRMI listener) throws RemoteException{
+        Vector<Usuario> cL = getUsersGroup(name);
         //Mirar si existe el grupo
         if (cL != null) {
           //Mirar si ya esta en el grupo
-          if(!cL.contains(listener)){
-            cL.add(listener);
+          Usuario u = getUsuario(username);
+          if(!cL.contains(u)){
+            cL.add(u);
           }
         }
     }
@@ -131,36 +132,41 @@ public class Servant implements ServerRMI {
     }
 
     public void sendMsgGroup(String userSrc, String group, String message, String date) {
-        Vector<ClientRMI> cL = getListersGroup(group);
+        Vector<Usuario> cL = getUsersGroup(group);
+        System.out.println("1");
 
         if (cL != null) {
+          System.out.println("2");
 
-          ClientRMI uSrc = loggeados.get(getUsuario(userSrc));
-          if(cL.contains(uSrc)){
+          //ClientRMI uSrc = loggeados.get(getUsuario(userSrc));
+
+          Usuario u = getUsuario(userSrc);
+          if(cL.contains(u) && loggeados.containsKey(u)){
+            System.out.println("3");
 
             for (Enumeration e = cL.elements(); e.hasMoreElements(); ) {
-                ClientRMI listener1 = (ClientRMI) e.nextElement();
+                Usuario u1 = (Usuario) e.nextElement();
+                System.out.println(u1.getNombre());
                 try {
-                    if(loggeados.containsValue(listener1)) listener1.sendMsgGroup(userSrc, group, message, date);
+                    if(loggeados.containsKey(u1)) loggeados.get(u1).sendMsgGroup(userSrc, group, message, date);
                 } catch (RemoteException re) {
-                    System.out.println(" Listener not accessible, removing listener -" + listener1);
-                    cL.remove(listener1);
+                    System.out.println(" Listener not accessible, removing listener -");
                 }
             }
           }
         }
     }
 
-    private Vector<ClientRMI> getListersGroup(String group){
-        for (Entry<String, Vector<ClientRMI>> log : groups.entrySet()){
+    private Vector<Usuario> getUsersGroup(String group){
+        for (Entry<String, Vector<Usuario>> log : groups.entrySet()){
             if(log.getKey().equals(group)) return log.getValue();
         }
         return null;
     }
 
 
-    public void leaveGroup(String group, ClientRMI listener) {
-      for (Entry<String, Vector<ClientRMI>> log : groups.entrySet()){
+    public void leaveGroup(String group, String username, ClientRMI listener) {
+      for (Entry<String, Vector<Usuario>> log : groups.entrySet()){
           if(log.getKey().equals(group)) {
             log.getValue().remove(listener);
             break;
